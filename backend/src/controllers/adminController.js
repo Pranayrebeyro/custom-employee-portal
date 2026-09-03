@@ -179,6 +179,7 @@ async function updateUser(req, res) {
         const {
             name,
             email,
+            password,
             role,
             is_active
         } = req.body;
@@ -201,6 +202,12 @@ async function updateUser(req, res) {
         if (userResult.rows.length === 0) {
             return res.status(404).json({
                 message: "User not found"
+            });
+        }
+
+        if (password !== undefined && password.length < 6) {
+            return res.status(400).json({
+                message: "Password must be at least 6 characters"
             });
         }
 
@@ -250,9 +257,16 @@ async function updateUser(req, res) {
                 );
             }
 
+            let passwordHash = null;
+
+            if (password) {
+                passwordHash = await bcrypt.hash(password, 10);
+            }
+
             if (
                 name ||
                 email ||
+                passwordHash ||
                 typeof is_active === "boolean"
             ) {
                 await client.query(
@@ -261,13 +275,15 @@ async function updateUser(req, res) {
                     SET
                         name = COALESCE($1, name),
                         email = COALESCE($2, email),
-                        is_active = COALESCE($3, is_active),
+                        password_hash = COALESCE($3, password_hash),
+                        is_active = COALESCE($4, is_active),
                         updated_at = NOW()
-                    WHERE id = $4
+                    WHERE id = $5
                     `,
                     [
                         name || null,
                         email || null,
+                        passwordHash,
                         typeof is_active === "boolean"
                             ? is_active
                             : null,
@@ -289,6 +305,7 @@ async function updateUser(req, res) {
                     name,
                     email,
                     role: roleName,
+                    passwordChanged: Boolean(password),
                     is_active
                 }
             });

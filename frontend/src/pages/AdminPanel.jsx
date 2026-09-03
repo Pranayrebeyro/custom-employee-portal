@@ -96,6 +96,7 @@ function AdminPanel({ onBack }) {
                 ]);
 
             setRoles(rolesResult.roles || []);
+
             setPermissions(
                 permissionsResult.permissions || []
             );
@@ -222,12 +223,15 @@ function AdminPanel({ onBack }) {
                 {
                     name: form.name,
                     email: form.email,
+                    password: form.password,
                     role: form.role
                 }
             );
 
             setMessage(
-                "User updated successfully"
+                form.password
+                    ? "User and password updated successfully"
+                    : "User updated successfully"
             );
 
             resetForm();
@@ -416,12 +420,14 @@ function AdminPanel({ onBack }) {
             <div className="admin-header">
 
                 <div>
+
                     <h1>Admin Panel</h1>
 
                     <p>
                         Manage users, roles, permissions
                         and audit logs
                     </p>
+
                 </div>
 
                 <button
@@ -449,6 +455,7 @@ function AdminPanel({ onBack }) {
                     Users
                 </button>
 
+
                 <button
                     className={
                         activeTab === "roles"
@@ -461,6 +468,7 @@ function AdminPanel({ onBack }) {
                 >
                     Roles & Permissions
                 </button>
+
 
                 <button
                     className={
@@ -513,6 +521,7 @@ function AdminPanel({ onBack }) {
                                 : "Create User"}
                         </h2>
 
+
                         <form
                             className="user-form"
                             onSubmit={
@@ -528,7 +537,9 @@ function AdminPanel({ onBack }) {
                                 placeholder="Full name"
                                 value={form.name}
                                 onChange={handleChange}
+                                required
                             />
+
 
                             <input
                                 type="email"
@@ -536,23 +547,32 @@ function AdminPanel({ onBack }) {
                                 placeholder="Email"
                                 value={form.email}
                                 onChange={handleChange}
+                                required
                             />
 
-                            {!editingUser && (
-                                <input
-                                    type="password"
-                                    name="password"
-                                    placeholder="Password"
-                                    value={form.password}
-                                    onChange={handleChange}
-                                />
-                            )}
+
+                            <input
+                                type="password"
+                                name="password"
+                                placeholder={
+                                    editingUser
+                                        ? "New password (leave blank to keep current)"
+                                        : "Password"
+                                }
+                                value={form.password}
+                                onChange={handleChange}
+                                required={!editingUser}
+                                minLength={6}
+                            />
+
 
                             <select
                                 name="role"
                                 value={form.role}
                                 onChange={handleChange}
+                                required
                             >
+
                                 <option value="HR">
                                     HR
                                 </option>
@@ -572,7 +592,9 @@ function AdminPanel({ onBack }) {
                                 <option value="Admin">
                                     Admin
                                 </option>
+
                             </select>
+
 
                             <div className="form-actions">
 
@@ -584,6 +606,7 @@ function AdminPanel({ onBack }) {
                                         ? "Update User"
                                         : "Create User"}
                                 </button>
+
 
                                 {editingUser && (
                                     <button
@@ -613,15 +636,18 @@ function AdminPanel({ onBack }) {
                                 <thead>
 
                                     <tr>
+
                                         <th>ID</th>
                                         <th>Name</th>
                                         <th>Email</th>
                                         <th>Role</th>
                                         <th>Status</th>
                                         <th>Actions</th>
+
                                     </tr>
 
                                 </thead>
+
 
                                 <tbody>
 
@@ -633,17 +659,21 @@ function AdminPanel({ onBack }) {
                                                 {user.id}
                                             </td>
 
+
                                             <td>
                                                 {user.name}
                                             </td>
+
 
                                             <td>
                                                 {user.email}
                                             </td>
 
+
                                             <td>
                                                 {user.roles?.join(", ")}
                                             </td>
+
 
                                             <td>
 
@@ -661,6 +691,7 @@ function AdminPanel({ onBack }) {
 
                                             </td>
 
+
                                             <td>
 
                                                 <button
@@ -671,6 +702,7 @@ function AdminPanel({ onBack }) {
                                                 >
                                                     Edit
                                                 </button>
+
 
                                                 {user.id !== 1 && (
                                                     <button
@@ -698,6 +730,7 @@ function AdminPanel({ onBack }) {
                     </div>
 
                 </div>
+
             )}
 
 
@@ -713,10 +746,12 @@ function AdminPanel({ onBack }) {
                             Roles & Permissions
                         </h2>
 
+
                         <p className="section-description">
                             Assign permissions to each
                             employee role.
                         </p>
+
 
                         <div className="roles-container">
 
@@ -770,16 +805,20 @@ function AdminPanel({ onBack }) {
                                                         }
                                                     />
 
+
                                                     <span>
+
                                                         <strong>
                                                             {permission.name}
                                                         </strong>
+
 
                                                         <small>
                                                             {
                                                                 permission.description
                                                             }
                                                         </small>
+
                                                     </span>
 
                                                 </label>
@@ -798,6 +837,7 @@ function AdminPanel({ onBack }) {
                     </div>
 
                 </div>
+
             )}
 
 
@@ -813,6 +853,7 @@ function AdminPanel({ onBack }) {
                             Audit Logs
                         </h2>
 
+
                         <div className="table-wrapper">
 
                             <table>
@@ -820,6 +861,7 @@ function AdminPanel({ onBack }) {
                                 <thead>
 
                                     <tr>
+
                                         <th>ID</th>
                                         <th>User</th>
                                         <th>Action</th>
@@ -827,9 +869,11 @@ function AdminPanel({ onBack }) {
                                         <th>Status</th>
                                         <th>IP Address</th>
                                         <th>Time</th>
+
                                     </tr>
 
                                 </thead>
+
 
                                 <tbody>
 
@@ -841,20 +885,25 @@ function AdminPanel({ onBack }) {
                                                 {log.id}
                                             </td>
 
+
                                             <td>
                                                 {log.user_name ||
                                                     "System"}
                                             </td>
 
+
                                             <td>
                                                 {log.action}
                                             </td>
+
 
                                             <td>
                                                 {log.resource || "-"}
                                             </td>
 
+
                                             <td>
+
                                                 <span
                                                     className={
                                                         log.status ===
@@ -865,12 +914,15 @@ function AdminPanel({ onBack }) {
                                                 >
                                                     {log.status}
                                                 </span>
+
                                             </td>
+
 
                                             <td>
                                                 {log.ip_address ||
                                                     "-"}
                                             </td>
+
 
                                             <td>
                                                 {new Date(
@@ -891,6 +943,7 @@ function AdminPanel({ onBack }) {
                     </div>
 
                 </div>
+
             )}
 
         </div>
