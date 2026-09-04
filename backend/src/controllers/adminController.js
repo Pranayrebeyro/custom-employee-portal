@@ -343,48 +343,87 @@ async function updateUser(req, res) {
 
 
 async function deleteUser(req, res) {
-    try {
-        const userId = Number(req.params.id);
+    const userId = Number(req.params.id);
 
+    try {
         if (!userId) {
             return res.status(400).json({
                 message: "Valid user ID is required"
             });
         }
 
-        const result = await db.query(
+        // Protect the main Admin account
+        if (userId === 1) {
+            return res.status(403).json({
+                message: "The main Admin account cannot be deleted"
+            });
+        }
+
+        const userResult = await db.query(
             `
-            UPDATE Users
-            SET
-                is_active = FALSE,
-                updated_at = NOW()
+            SELECT id, name, email
+            FROM Users
             WHERE id = $1
-            RETURNING id, name, email, is_active
             `,
             [userId]
         );
 
-        if (result.rows.length === 0) {
+        if (userResult.rows.length === 0) {
             return res.status(404).json({
                 message: "User not found"
             });
         }
 
+        const user = userResult.rows[0];
+
+        const client = await db.connect();
+
+        try {
+            await client.query("BEGIN");
+
+            // Remove role assignments first
+            await client.query(
+                `
+                DELETE FROM UserRoles
+                WHERE user_id = $1
+                `,
+                [userId]
+            );
+
+            // Remove the user permanently
+            await client.query(
+                `
+                DELETE FROM Users
+                WHERE id = $1
+                `,
+                [userId]
+            );
+
+            await client.query("COMMIT");
+
+        } catch (error) {
+            await client.query("ROLLBACK");
+            throw error;
+        } finally {
+            client.release();
+        }
+
+        // Record deletion in audit log
         await createAuditLog({
             userId: req.user.userId,
-            action: "DEACTIVATE_USER",
+            action: "DELETE_USER",
             resource: `user:${userId}`,
             status: "SUCCESS",
             ipAddress: req.ip,
             details: {
-                deactivatedUserId: userId,
-                email: result.rows[0].email
+                deletedUserId: userId,
+                name: user.name,
+                email: user.email
             }
         });
 
         return res.status(200).json({
-            message: "User deactivated successfully",
-            user: result.rows[0]
+            message: "User permanently deleted successfully"
         });
 
     } catch (error) {
@@ -392,8 +431,8 @@ async function deleteUser(req, res) {
 
         await createAuditLog({
             userId: req.user?.userId || null,
-            action: "DEACTIVATE_USER",
-            resource: `user:${req.params.id}`,
+            action: "DELETE_USER",
+            resource: `user:${userId}`,
             status: "FAILED",
             ipAddress: req.ip,
             details: {

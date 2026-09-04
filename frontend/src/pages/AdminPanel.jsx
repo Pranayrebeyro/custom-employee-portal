@@ -293,43 +293,43 @@ function AdminPanel({ onBack }) {
 
     async function handleDeleteUser(user) {
 
-        if (user.id === 1) {
-            return;
-        }
+    if (user.id === 1) {
+        return;
+    }
 
-        const confirmed = window.confirm(
-            `Deactivate ${user.name}?`
+    const confirmed = window.confirm(
+        `Permanently delete ${user.name}? This action cannot be undone.`
+    );
+
+    if (!confirmed) {
+        return;
+    }
+
+    try {
+
+        setLoading(true);
+        setMessage("");
+        setError("");
+
+        await deleteUser(user.id);
+
+        setMessage(
+            "User permanently deleted successfully"
         );
 
-        if (!confirmed) {
-            return;
-        }
+        await loadUsers();
 
-        try {
+    } catch (err) {
 
-            setLoading(true);
-            setMessage("");
-            setError("");
+        setError(
+            err.response?.data?.message ||
+            "Unable to delete user"
+        );
 
-            await deleteUser(user.id);
-
-            setMessage(
-                "User deactivated successfully"
-            );
-
-            await loadUsers();
-
-        } catch (err) {
-
-            setError(
-                err.response?.data?.message ||
-                "Unable to deactivate user"
-            );
-
-        } finally {
-            setLoading(false);
-        }
+    } finally {
+        setLoading(false);
     }
+}
 
 
     function hasPermission(role, permissionId) {
@@ -705,15 +705,28 @@ function AdminPanel({ onBack }) {
 
 
                                                 {user.id !== 1 && (
-                                                    <button
-                                                        className="delete-button"
-                                                        onClick={() =>
-                                                            handleDeleteUser(user)
-                                                        }
-                                                    >
-                                                        Deactivate
-                                                    </button>
-                                                )}
+    <>
+        <button
+            className="delete-button"
+            onClick={() =>
+                handleToggleUser(user)
+            }
+        >
+            {user.is_active
+                ? "Deactivate"
+                : "Activate"}
+        </button>
+
+        <button
+            className="delete-button"
+            onClick={() =>
+                handleDeleteUser(user)
+            }
+        >
+            Delete
+        </button>
+    </>
+)}
 
                                             </td>
 
